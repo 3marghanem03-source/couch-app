@@ -71,6 +71,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Missing SUPABASE_URL and/or SUPABASE_ANON_KEY GitHub secrets."
+            echo "Repo → Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
           flutter build web --release --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
