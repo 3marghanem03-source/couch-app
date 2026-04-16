@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Loads `assets/app.env` and optional `--dart-define` overrides.
+/// Loads `assets/app.env.example` and optional `--dart-define` overrides.
 ///
 /// Required for Supabase:
 /// - `SUPABASE_URL`
@@ -23,7 +23,7 @@ class AppConfig {
   static String get defaultCoachId => _defaultCoachId;
 
   static Future<void> load() async {
-    await dotenv.load(fileName: 'assets/app.env', isOptional: true);
+    await dotenv.load(fileName: 'assets/app.env.example');
     final env = dotenv.env;
 
     final url = (_compileSupabaseUrl.isNotEmpty ? _compileSupabaseUrl : env['SUPABASE_URL']?.trim()) ?? '';
@@ -41,7 +41,7 @@ class AppConfig {
   static void assertSupabaseConfigured() {
     if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
       throw StateError(
-        'Missing SUPABASE_URL or SUPABASE_ANON_KEY. Add them to assets/app.env (see assets/app.env.example).',
+        'Missing SUPABASE_URL or SUPABASE_ANON_KEY. For local dev, copy assets/app.env.example to assets/app.env and update it, or pass --dart-define values.',
       );
     }
   }
