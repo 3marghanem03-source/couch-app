@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../models/time_slot.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/language_toggle_action.dart';
 import '../schedule/widgets/week_schedule_section.dart';
 import 'coach_schedule_dialogs.dart';
 
@@ -32,9 +34,13 @@ class _CoachScheduleScreenState extends State<CoachScheduleScreen> {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final slots = appState.slotsForDay(_day);
         return Scaffold(
-          appBar: AppBar(title: const Text('My schedule')),
+          appBar: AppBar(
+            title: Text(s.t('coach.schedule')),
+            actions: const [LanguageToggleAction()],
+          ),
           body: Stack(
             children: [
               ListView(

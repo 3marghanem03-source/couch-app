@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/ui/app_spacing.dart';
 import '../../core/ui/app_text_styles.dart';
 import '../../widgets/app_button.dart';
@@ -9,6 +10,7 @@ import '../../widgets/card_container.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/language_toggle_action.dart';
 import '../schedule/widgets/week_schedule_section.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -33,11 +35,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final slots = appState.slotsForDay(_day);
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Home'),
+            title: Text(s.t('client.home')),
             actions: [
+              const LanguageToggleAction(),
               NotificationBell(
                 unreadCount: appState.unreadNotifications,
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
@@ -51,7 +55,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   await appState.logout();
                   if (context.mounted) AppRoutes.replaceWithLogin(context);
                 },
-                child: const Text('Log out'),
+                child: Text(s.t('common.logout')),
               ),
             ],
           ),
@@ -94,12 +98,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sectionGap),
                   AppButton(
-                    label: 'Book a session',
+                    label: s.t('client.book'),
                     onPressed: () => Navigator.pushNamed(context, AppRoutes.clientBook),
                   ),
                   const SizedBox(height: AppSpacing.itemGap),
                   AppButton(
-                    label: 'My bookings',
+                    label: s.t('client.myBookings'),
                     outlined: true,
                     onPressed: () => Navigator.pushNamed(context, AppRoutes.clientBookings),
                   ),

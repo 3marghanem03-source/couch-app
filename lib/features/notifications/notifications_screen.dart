@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/ui/app_spacing.dart';
 import '../../models/app_notification.dart';
 import '../../services/notifications/in_app_notification_service.dart';
 import '../../widgets/card_container.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/language_toggle_action.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -45,8 +47,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(
+        title: Text(s.t('notifications.title')),
+        actions: const [LanguageToggleAction()],
+      ),
       body: Stack(
         children: [
           RefreshIndicator(

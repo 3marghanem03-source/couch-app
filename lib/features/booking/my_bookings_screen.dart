@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/booking_status.dart';
 import '../../widgets/booking_card.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/language_toggle_action.dart';
 
 class MyBookingsScreen extends StatelessWidget {
   const MyBookingsScreen({super.key});
@@ -14,6 +16,7 @@ class MyBookingsScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final user = appState.currentUser;
         if (user == null) {
           return const Scaffold(body: Center(child: Text('Not signed in.')));
@@ -59,7 +62,10 @@ class MyBookingsScreen extends StatelessWidget {
         final rejected = mine.where((b) => b.status == BookingStatus.rejected).toList();
 
         return Scaffold(
-          appBar: AppBar(title: const Text('My bookings')),
+          appBar: AppBar(
+            title: Text(s.t('client.myBookings')),
+            actions: const [LanguageToggleAction()],
+          ),
           body: ListView(
             children: [
               buildSection('Pending', pending),

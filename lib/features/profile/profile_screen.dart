@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/ui/app_spacing.dart';
 import '../../models/user_role.dart';
 import '../../services/profile/profile_service.dart';
@@ -8,6 +9,7 @@ import '../../widgets/card_container.dart';
 import '../../widgets/input_field.dart';
 import '../../widgets/loading_widget.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/language_toggle_action.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -79,13 +81,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final u = appState.currentUser;
         if (u == null) {
           return const Scaffold(body: Center(child: Text('Not signed in.')));
         }
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Profile')),
+          appBar: AppBar(
+            title: Text(s.t('profile.title')),
+            actions: const [LanguageToggleAction()],
+          ),
           body: Stack(
             children: [
               ListView(

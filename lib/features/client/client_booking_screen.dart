@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../models/time_slot.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/language_toggle_action.dart';
 import '../schedule/widgets/week_schedule_section.dart';
 
 class ClientBookingScreen extends StatefulWidget {
@@ -43,7 +45,7 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
       await appState.bookSessionAsync(weekdayIndex: _day, timeKey: slot.timeKey, slot: slot);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request sent — pending coach approval.')),
+        SnackBar(content: Text(AppLocalizations.of(context).t('client.book.sent'))),
       );
       Navigator.pushNamed(context, AppRoutes.clientBookings);
     } catch (e) {
@@ -59,9 +61,13 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final slots = appState.slotsForDay(_day);
         return Scaffold(
-          appBar: AppBar(title: const Text('Book a session')),
+          appBar: AppBar(
+            title: Text(s.t('client.book.title')),
+            actions: const [LanguageToggleAction()],
+          ),
           body: Stack(
             children: [
               Column(
@@ -71,7 +77,7 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
                       padding: const EdgeInsets.all(16),
                       children: [
                         Text(
-                          'Choose a day, then an open slot.',
+                          s.t('client.book.pick'),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 12),
@@ -93,7 +99,7 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                     child: AppButton(
-                      label: _submitting ? 'Booking…' : 'Book session',
+                      label: _submitting ? s.t('client.book.buttoning') : s.t('client.book.button'),
                       onPressed: (appState.isRefreshing || _submitting) ? null : () => _book(),
                     ),
                   ),

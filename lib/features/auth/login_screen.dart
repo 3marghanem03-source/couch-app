@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/app_routes.dart';
 import '../../core/app_state.dart';
 import '../../core/errors/user_friendly_error.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/ui/app_spacing.dart';
 import '../../core/ui/app_text_styles.dart';
 import '../../models/user_role.dart';
 import '../../widgets/card_container.dart';
 import '../../widgets/input_field.dart';
+import '../../widgets/language_toggle_action.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
 
@@ -76,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -87,6 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const Align(alignment: Alignment.centerRight, child: LanguageToggleAction()),
                     const SizedBox(height: 8),
                     Text(
                       'Welcome back.\nYour journey starts\nhere.',
@@ -186,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sectionGap),
                     PrimaryButton(
-                      label: _busy ? 'Working…' : (_createAccount ? 'Create account' : 'Login'),
+                      label: _busy ? s.t('common.loading') : (_createAccount ? s.t('auth.signup') : s.t('auth.login')),
                       onPressed: _busy
                           ? null
                           : () {

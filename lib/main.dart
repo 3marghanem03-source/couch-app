@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/app_navigator.dart';
 import 'core/app_routes.dart';
 import 'core/app_state.dart';
 import 'core/config/app_config.dart';
+import 'core/i18n/app_localizations.dart';
 import 'core/ui/app_theme.dart';
 
 Future<void> main() async {
@@ -40,6 +42,14 @@ class CoachSessionsApp extends StatelessWidget {
           navigatorKey: appNavigatorKey,
           title: 'Coach Sessions',
           theme: AppTheme.light(),
+          locale: appState.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           initialRoute: AppRoutes.login,
           routes: AppRoutes.materialRoutes(),
         );

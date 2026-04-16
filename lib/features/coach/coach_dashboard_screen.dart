@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/app_routes.dart';
 import '../../core/app_state.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/ui/app_spacing.dart';
 import '../../core/ui/app_text_styles.dart';
 import '../../widgets/app_button.dart';
@@ -9,6 +10,7 @@ import '../../widgets/booking_card.dart';
 import '../../widgets/card_container.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/loading_widget.dart';
+import '../../widgets/language_toggle_action.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/section_header.dart';
 import 'client_profile_screen.dart';
@@ -21,6 +23,7 @@ class CoachDashboardScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: appState,
       builder: (context, _) {
+        final s = AppLocalizations.of(context);
         final pending = appState.pendingRequests();
         final clients = appState.clients;
         final myCode = appState.currentUser?.inviteCode;
@@ -29,6 +32,7 @@ class CoachDashboardScreen extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Coach dashboard'),
             actions: [
+              const LanguageToggleAction(),
               NotificationBell(
                 unreadCount: appState.unreadNotifications,
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
@@ -42,7 +46,7 @@ class CoachDashboardScreen extends StatelessWidget {
                   await appState.logout();
                   if (context.mounted) AppRoutes.replaceWithLogin(context);
                 },
-                child: const Text('Log out'),
+                child: Text(s.t('common.logout')),
               ),
             ],
           ),

@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
 
 import '../models/booking.dart';
 import '../models/time_slot.dart';
@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
   User? currentUser;
   List<User> _clients = [];
   int _unreadNotifications = 0;
+  Locale _locale = const Locale('en');
 
   bool isRefreshing = false;
 
@@ -41,6 +42,13 @@ class AppState extends ChangeNotifier {
   List<Booking> bookingsForClient(String clientId) => bookingService.forClientSorted(clientId);
 
   int get unreadNotifications => _unreadNotifications;
+
+  Locale get locale => _locale;
+
+  void toggleLanguage() {
+    _locale = (_locale.languageCode.toLowerCase() == 'ar') ? const Locale('en') : const Locale('ar');
+    notifyListeners();
+  }
 
   Map<int, List<TimeSlot>> get scheduleByWeekday => scheduleService.scheduleByWeekday;
 
