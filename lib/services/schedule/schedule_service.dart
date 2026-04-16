@@ -62,7 +62,7 @@ class ScheduleService {
       } else {
         final row = dayAvail.first;
         keys = ScheduleCalendar.hourKeysFromAvailabilityRow(
-          row['start_time'] as String? ?? '16:00',
+          row['start_time'] as String? ?? '07:00',
           row['end_time'] as String? ?? '22:00',
         );
       }

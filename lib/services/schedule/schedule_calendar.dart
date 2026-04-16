@@ -32,14 +32,14 @@ class ScheduleCalendar {
     return '${x.year.toString().padLeft(4, '0')}-${x.month.toString().padLeft(2, '0')}-${x.day.toString().padLeft(2, '0')}';
   }
 
-  /// When a coach has no `availability` row for a weekday, use 16:00–22:00 (inclusive hour starts).
+  /// When a coach has no `availability` row for a weekday, use 07:00–22:00 (inclusive hour starts).
   static List<String> defaultOpenHourKeys() {
-    return [for (var h = 16; h <= 22; h++) '${h.toString().padLeft(2, '0')}:00'];
+    return [for (var h = 7; h <= 22; h++) '${h.toString().padLeft(2, '0')}:00'];
   }
 
   /// `start` / `end` are "HH:mm"; `end` is treated as **last bookable hour** (inclusive), same as defaults.
   static List<String> hourKeysFromAvailabilityRow(String startHm, String endHm) {
-    final sh = int.tryParse(startHm.split(':').first) ?? 16;
+    final sh = int.tryParse(startHm.split(':').first) ?? 7;
     final eh = int.tryParse(endHm.split(':').first) ?? 22;
     if (eh < sh) return defaultOpenHourKeys();
     return [for (var h = sh; h <= eh; h++) '${h.toString().padLeft(2, '0')}:00'];
