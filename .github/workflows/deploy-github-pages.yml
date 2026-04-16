@@ -1,0 +1,97 @@
+# Deploy Flutter web to GitHub Pages.
+#
+# First-time repo setup:
+# 1. Push this workflow to GitHub (branch: main).
+# 2. Repo → Settings → Pages → Build and deployment → Source: "GitHub Actions".
+# 3. Default URL is https://<user>.github.io/<repo>/ — base-href matches automatically.
+#
+# Custom domain (e.g. app.yourdomain.com):
+# 1. Repo → Settings → Pages → Custom domain → enter your domain (adds DNS check).
+# 2. At your DNS: CNAME app → <user>.github.io (see GitHub docs for apex A/ALIAS).
+# 3. Run workflow with input base_href "/" OR set repo Variable PAGES_BASE_HREF to /
+# 4. Add a one-line file web/CNAME containing only the hostname (e.g. app.yourdomain.com)
+#    so the built site includes CNAME, OR set repo Variable CUSTOM_DOMAIN to the same hostname.
+#
+# Supabase (required for the live site to connect):
+# Repo → Settings → Secrets and variables → Actions → New repository secret:
+#   SUPABASE_URL, SUPABASE_ANON_KEY (same values as in assets/app.env locally).
+
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      base_href:
+        description: "flutter --base-href (leave empty for /repo-name/; use / for custom domain at site root)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Resolve base href
+        id: base
+        env:
+          DISPATCH_BASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.base_href || '' }}
+        run: |
+          INPUT="$DISPATCH_BASE"
+          VAR='${{ vars.PAGES_BASE_HREF }}'
+          REPO='${{ github.event.repository.name }}'
+          if [ -n "$INPUT" ]; then
+            echo "href=$INPUT" >> "$GITHUB_OUTPUT"
+          elif [ -n "$VAR" ]; then
+            echo "href=$VAR" >> "$GITHUB_OUTPUT"
+          else
+            echo "href=/$REPO/" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build web
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          flutter build web --release --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+
+      - name: Disable Jekyll (Flutter asset paths)
+        run: touch build/web/.nojekyll
+
+      - name: CNAME from repo variable
+        if: ${{ vars.CUSTOM_DOMAIN != '' }}
+        run: printf '%s\n' '${{ vars.CUSTOM_DOMAIN }}' > build/web/CNAME
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

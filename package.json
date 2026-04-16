@@ -1,0 +1,9 @@
+{
+  "name": "coach-sessions",
+  "private": true,
+  "description": "Root Node deps for optional Supabase JS scripts (Flutter app uses supabase_flutter).",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0"
+  }
+}
