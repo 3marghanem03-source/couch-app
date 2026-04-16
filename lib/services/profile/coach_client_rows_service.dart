@@ -28,16 +28,24 @@ class CoachClientRowsService {
     required String coachId,
     required String clientId,
     required String rowDateIso,
-    required String title,
-    required String value,
+    required String muscle,
+    required String exercise,
+    required int? sets,
+    required int? reps,
+    required double? weight,
+    required String weightUnit,
     required String notes,
   }) async {
     await _c.from('coach_client_rows').insert({
       'coach_id': coachId,
       'client_id': clientId,
       'row_date': rowDateIso,
-      'title': title,
-      'value': value,
+      'muscle': muscle,
+      'exercise': exercise,
+      'sets': sets,
+      'reps': reps,
+      'weight': weight,
+      'weight_unit': weightUnit,
       'notes': notes,
     });
   }
@@ -47,16 +55,24 @@ class CoachClientRowsService {
     required String coachId,
     required String clientId,
     required String rowDateIso,
-    required String title,
-    required String value,
+    required String muscle,
+    required String exercise,
+    required int? sets,
+    required int? reps,
+    required double? weight,
+    required String weightUnit,
     required String notes,
   }) async {
     await _c
         .from('coach_client_rows')
         .update({
           'row_date': rowDateIso,
-          'title': title,
-          'value': value,
+          'muscle': muscle,
+          'exercise': exercise,
+          'sets': sets,
+          'reps': reps,
+          'weight': weight,
+          'weight_unit': weightUnit,
           'notes': notes,
         })
         .eq('id', id)

@@ -50,6 +50,13 @@ class CoachSessionsApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
+          builder: (context, child) {
+            final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+            return Directionality(
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           initialRoute: AppRoutes.login,
           routes: AppRoutes.materialRoutes(),
         );

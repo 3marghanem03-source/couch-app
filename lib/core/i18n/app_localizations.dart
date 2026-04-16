@@ -55,8 +55,12 @@ class AppLocalizations {
     'coach.table.editRow': 'Edit row',
     'coach.table.date': 'Date (YYYY-MM-DD)',
     'coach.table.colDate': 'Date',
-    'coach.table.colTitle': 'Title',
-    'coach.table.colValue': 'Value',
+    'coach.table.colMuscle': 'Muscle',
+    'coach.table.colExercise': 'Exercise',
+    'coach.table.colSets': 'Sets',
+    'coach.table.colReps': 'Reps',
+    'coach.table.colWeight': 'Weight',
+    'coach.table.colUnit': 'Unit',
     'coach.table.colNotes': 'Notes',
   };
 
@@ -93,8 +97,12 @@ class AppLocalizations {
     'coach.table.editRow': 'تعديل الصف',
     'coach.table.date': 'التاريخ (YYYY-MM-DD)',
     'coach.table.colDate': 'التاريخ',
-    'coach.table.colTitle': 'العنوان',
-    'coach.table.colValue': 'القيمة',
+    'coach.table.colMuscle': 'العضلة',
+    'coach.table.colExercise': 'التمرين',
+    'coach.table.colSets': 'مجاميع',
+    'coach.table.colReps': 'تكرارات',
+    'coach.table.colWeight': 'الوزن',
+    'coach.table.colUnit': 'الوحدة',
     'coach.table.colNotes': 'ملاحظات',
   };
 }

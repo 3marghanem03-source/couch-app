@@ -103,8 +103,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   Future<void> _openRowEditor({CoachClientRow? row}) async {
     final s = AppLocalizations.of(context);
     final dateCtrl = TextEditingController(text: row?.rowDateIso.isNotEmpty == true ? row!.rowDateIso : _todayIso());
-    final titleCtrl = TextEditingController(text: row?.title ?? '');
-    final valueCtrl = TextEditingController(text: row?.value ?? '');
+    final muscleCtrl = TextEditingController(text: row?.muscle ?? '');
+    final exerciseCtrl = TextEditingController(text: row?.exercise ?? '');
+    final setsCtrl = TextEditingController(text: row?.sets?.toString() ?? '');
+    final repsCtrl = TextEditingController(text: row?.reps?.toString() ?? '');
+    final weightCtrl = TextEditingController(text: row?.weight?.toString() ?? '');
+    final unitCtrl = TextEditingController(text: row?.weightUnit ?? 'kg');
     final notesCtrl = TextEditingController(text: row?.notes ?? '');
 
     final res = await showDialog<_RowEditorResult>(
@@ -118,11 +122,27 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               children: [
                 InputField(controller: dateCtrl, label: s.t('coach.table.date')),
                 const SizedBox(height: 10),
-                InputField(controller: titleCtrl, label: s.t('coach.table.colTitle')),
+                InputField(controller: muscleCtrl, label: s.t('coach.table.colMuscle')),
                 const SizedBox(height: 10),
-                InputField(controller: valueCtrl, label: s.t('coach.table.colValue')),
+                InputField(controller: exerciseCtrl, label: s.t('coach.table.colExercise')),
                 const SizedBox(height: 10),
                 InputField(controller: notesCtrl, label: s.t('coach.table.colNotes')),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: InputField(controller: setsCtrl, label: s.t('coach.table.colSets'))),
+                    const SizedBox(width: 10),
+                    Expanded(child: InputField(controller: repsCtrl, label: s.t('coach.table.colReps'))),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: InputField(controller: weightCtrl, label: s.t('coach.table.colWeight'))),
+                    const SizedBox(width: 10),
+                    Expanded(child: InputField(controller: unitCtrl, label: s.t('coach.table.colUnit'))),
+                  ],
+                ),
               ],
             ),
           ),
@@ -141,8 +161,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 context,
                 _RowEditorResult.save(
                   dateIso: dateCtrl.text.trim(),
-                  title: titleCtrl.text.trim(),
-                  value: valueCtrl.text.trim(),
+                  muscle: muscleCtrl.text.trim(),
+                  exercise: exerciseCtrl.text.trim(),
+                  setsText: setsCtrl.text.trim(),
+                  repsText: repsCtrl.text.trim(),
+                  weightText: weightCtrl.text.trim(),
+                  unit: unitCtrl.text.trim(),
                   notes: notesCtrl.text.trim(),
                 ),
               ),
@@ -159,13 +183,21 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       if (res.action == _RowEditorAction.delete && row != null) {
         await _rowsSvc.delete(id: row.id, coachId: widget.coachId, clientId: widget.client.id);
       } else if (res.action == _RowEditorAction.save) {
+        final sets = int.tryParse(res.setsText);
+        final reps = int.tryParse(res.repsText);
+        final weight = double.tryParse(res.weightText);
+
         if (row == null) {
           await _rowsSvc.create(
             coachId: widget.coachId,
             clientId: widget.client.id,
             rowDateIso: res.dateIso,
-            title: res.title,
-            value: res.value,
+            muscle: res.muscle,
+            exercise: res.exercise,
+            sets: sets,
+            reps: reps,
+            weight: weight,
+            weightUnit: res.unit,
             notes: res.notes,
           );
         } else {
@@ -174,8 +206,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             coachId: widget.coachId,
             clientId: widget.client.id,
             rowDateIso: res.dateIso,
-            title: res.title,
-            value: res.value,
+            muscle: res.muscle,
+            exercise: res.exercise,
+            sets: sets,
+            reps: reps,
+            weight: weight,
+            weightUnit: res.unit,
             notes: res.notes,
           );
         }
@@ -279,8 +315,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                         child: DataTable(
                           columns: [
                             DataColumn(label: Text(s.t('coach.table.colDate'))),
-                            DataColumn(label: Text(s.t('coach.table.colTitle'))),
-                            DataColumn(label: Text(s.t('coach.table.colValue'))),
+                            DataColumn(label: Text(s.t('coach.table.colMuscle'))),
+                            DataColumn(label: Text(s.t('coach.table.colExercise'))),
+                            DataColumn(label: Text(s.t('coach.table.colSets'))),
+                            DataColumn(label: Text(s.t('coach.table.colReps'))),
+                            DataColumn(label: Text(s.t('coach.table.colWeight'))),
+                            DataColumn(label: Text(s.t('coach.table.colUnit'))),
                             DataColumn(label: Text(s.t('coach.table.colNotes'))),
                             const DataColumn(label: Text('')),
                           ],
@@ -289,8 +329,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                                 (r) => DataRow(
                                   cells: [
                                     DataCell(Text(r.rowDateIso)),
-                                    DataCell(Text(r.title)),
-                                    DataCell(Text(r.value)),
+                                    DataCell(Text(r.muscle)),
+                                    DataCell(Text(r.exercise)),
+                                    DataCell(Text(r.sets?.toString() ?? '')),
+                                    DataCell(Text(r.reps?.toString() ?? '')),
+                                    DataCell(Text(r.weight?.toString() ?? '')),
+                                    DataCell(Text(r.weightUnit)),
                                     DataCell(Text(r.notes)),
                                     DataCell(
                                       IconButton(
@@ -324,30 +368,46 @@ class _RowEditorResult {
   const _RowEditorResult._(
     this.action, {
     this.dateIso = '',
-    this.title = '',
-    this.value = '',
+    this.muscle = '',
+    this.exercise = '',
+    this.setsText = '',
+    this.repsText = '',
+    this.weightText = '',
+    this.unit = '',
     this.notes = '',
   });
 
   final _RowEditorAction action;
   final String dateIso;
-  final String title;
-  final String value;
+  final String muscle;
+  final String exercise;
+  final String setsText;
+  final String repsText;
+  final String weightText;
+  final String unit;
   final String notes;
 
   const _RowEditorResult.delete() : this._(_RowEditorAction.delete);
 
   factory _RowEditorResult.save({
     required String dateIso,
-    required String title,
-    required String value,
+    required String muscle,
+    required String exercise,
+    required String setsText,
+    required String repsText,
+    required String weightText,
+    required String unit,
     required String notes,
   }) {
     return _RowEditorResult._(
       _RowEditorAction.save,
       dateIso: dateIso,
-      title: title,
-      value: value,
+      muscle: muscle,
+      exercise: exercise,
+      setsText: setsText,
+      repsText: repsText,
+      weightText: weightText,
+      unit: unit,
       notes: notes,
     );
   }
