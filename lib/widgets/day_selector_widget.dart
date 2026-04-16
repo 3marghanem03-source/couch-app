@@ -18,16 +18,23 @@ class DaySelectorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     return Row(
       children: List.generate(7, (i) {
         final selected = i == selectedIndex;
-        final date = weekMonday.add(Duration(days: i)).day;
+        final fullDate = weekMonday.add(Duration(days: i));
+        final dayDate = DateTime(fullDate.year, fullDate.month, fullDate.day);
+        final isPastDay = dayDate.isBefore(today);
+        final date = fullDate.day;
+
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () => onDaySelected(i),
+              onTap: isPastDay ? null : () => onDaySelected(i),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
@@ -50,7 +57,9 @@ class DaySelectorWidget extends StatelessWidget {
                       ScheduleCalendar.dayLabels[i],
                       style: AppTextStyles.muted.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: selected ? Colors.white : AppColors.muted,
+                        color: selected
+                            ? Colors.white
+                            : (isPastDay ? AppColors.disabled : AppColors.muted),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -59,7 +68,9 @@ class DaySelectorWidget extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: selected ? Colors.white : AppColors.text,
+                        color: selected
+                            ? Colors.white
+                            : (isPastDay ? AppColors.disabled : AppColors.text),
                       ),
                     ),
                   ],

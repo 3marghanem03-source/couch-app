@@ -22,6 +22,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   int _day = 0;
 
   @override
+  void initState() {
+    super.initState();
+    final todayIndex = DateTime.now().weekday - DateTime.monday; // Mon=0…Sun=6
+    _day = todayIndex.clamp(0, 6);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: appState,

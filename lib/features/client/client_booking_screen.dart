@@ -19,6 +19,13 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
   TimeSlot? _selectedSlot;
   bool _submitting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    final todayIndex = DateTime.now().weekday - DateTime.monday; // Mon=0…Sun=6
+    _day = todayIndex.clamp(0, 6);
+  }
+
   void _selectSlot(TimeSlot slot) {
     setState(() => _selectedSlot = slot);
   }

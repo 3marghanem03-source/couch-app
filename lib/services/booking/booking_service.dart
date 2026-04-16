@@ -64,6 +64,13 @@ class BookingService {
     required DateTime date,
     required String timeKey,
   }) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    if (day.isBefore(today)) {
+      throw StateError('You can’t book a past day.');
+    }
+
     await _c.from('bookings').insert({
       'client_id': clientId,
       'coach_id': coachId,

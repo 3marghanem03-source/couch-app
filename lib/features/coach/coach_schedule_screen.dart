@@ -16,6 +16,13 @@ class CoachScheduleScreen extends StatefulWidget {
 class _CoachScheduleScreenState extends State<CoachScheduleScreen> {
   int _day = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    final todayIndex = DateTime.now().weekday - DateTime.monday; // Mon=0…Sun=6
+    _day = todayIndex.clamp(0, 6);
+  }
+
   void _onSlotTap(TimeSlot slot) {
     showCoachSlotActions(context, weekdayIndex: _day, slot: slot);
   }
