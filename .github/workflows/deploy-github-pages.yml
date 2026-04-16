@@ -73,6 +73,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          # Fallback to known public (publishable) config so Pages can deploy even if
+          # the repo's Secrets/Variables UI isn't set correctly yet.
+          if [ -z "$SUPABASE_URL" ]; then
+            SUPABASE_URL="https://fohttdiwlcntblftpttu.supabase.co"
+          fi
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            SUPABASE_ANON_KEY="sb_publishable_r3kAKlQvUqyidJX0S4l82Q_UCmlXsHk"
+          fi
+
           echo "Supabase URL provided: $([ -n "$SUPABASE_URL" ] && echo yes || echo no)"
           echo "Supabase key provided: $([ -n "$SUPABASE_ANON_KEY" ] && echo yes || echo no)"
 
