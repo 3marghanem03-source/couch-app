@@ -68,13 +68,19 @@ jobs:
 
       - name: Build web
         env:
-          # Allow either Secrets or Variables (publishable keys are safe as variables).
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY }}
+          # Allow either Secrets or Variables and either naming style.
+          # Flutter build consumes SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          echo "Supabase URL provided: $([ -n "$SUPABASE_URL" ] && echo yes || echo no)"
+          echo "Supabase key provided: $([ -n "$SUPABASE_ANON_KEY" ] && echo yes || echo no)"
+
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Missing SUPABASE_URL and/or SUPABASE_ANON_KEY GitHub secrets."
-            echo "Repo → Settings → Secrets and variables → Actions."
+            echo "Missing Supabase config in GitHub Actions."
+            echo "Add either repository Secrets or Variables using one of these name pairs:"
+            echo "- SUPABASE_URL + SUPABASE_ANON_KEY"
+            echo "- NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
             exit 1
           fi
 
