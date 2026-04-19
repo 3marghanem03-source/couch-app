@@ -182,25 +182,41 @@ Deno.serve(async (req) => {
 
     const system =
       `You are a strength & conditioning coach assistant.\n` +
+      `You MUST use the provided client_details (bio/goals/injuries/private_notes) and training_rows history.\n` +
+      `If injuries conflict with an exercise, choose safer alternatives.\n` +
+      `\n` +
       `Return ONLY valid JSON matching this TypeScript type:\n` +
       `{\n` +
-      `  "week_start": string, // YYYY-MM-DD\n` +
-      `  "sessions": Array<{\n` +
-      `    "date": string, // YYYY-MM-DD within the week\n` +
+      `  "week_start": string, // YYYY-MM-DD (Monday of the week)\n` +
+      `  "client_summary": {\n` +
+      `    "goals": string,\n` +
+      `    "injuries": string,\n` +
+      `    "notes": string\n` +
+      `  },\n` +
+      `  "days": Array<{\n` +
+      `    "date": string, // YYYY-MM-DD, must be exactly the 7 dates Mon..Sun for this week_start\n` +
       `    "weekday_index": number, // 0=Mon … 6=Sun\n` +
-      `    "time": string, // HH:mm exactly, must be one of allowed slots for that date\n` +
-      `    "title": string,\n` +
-      `    "focus_muscles": string[],\n` +
-      `    "exercises": Array<{ name: string; sets?: number; reps?: number; notes?: string }>,\n` +
-      `    "coach_notes": string\n` +
+      `    "rows": Array<{\n` +
+      `      muscle: string, // primary muscle / muscle group\n` +
+      `      exercise: string,\n` +
+      `      reps: number, // reps per set (integer)\n` +
+      `      rounds: number, // total rounds/sets for this exercise in this session block (integer)\n` +
+      `      sets?: number, // optional alias; if present must equal rounds\n` +
+      `      notes?: string\n` +
+      `    }>,\n` +
+      `    "session_time"?: string, // optional HH:mm; if present must be allowed for that date and not busy\n` +
+      `    "session_title"?: string\n` +
       `  }>\n` +
       `}\n` +
-      `Rules:\n` +
-      `- Pick 2-4 sessions for the week unless injuries require fewer.\n` +
-      `- Never pick a time that is not in allowed_slots for that date.\n` +
-      `- Never pick a time that appears in busy_slots (format date|HH:mm).\n` +
-      `- Times must match allowed hourly slots like 09:00 (minutes must be 00).\n` +
-      `- Keep exercises realistic and safe; respect injuries/goals.\n`;
+      `Hard rules:\n` +
+      `- days.length MUST be 7.\n` +
+      `- days must be ordered Mon→Sun.\n` +
+      `- day.date must match week_start + weekday_index days.\n` +
+      `- Each day should include 3-8 rows unless injuries require fewer.\n` +
+      `- rounds must be an integer >= 1. reps must be an integer >= 1.\n` +
+      `- If session_time is included, it must be one of allowed_slots[date] and must not be in busy_slots.\n` +
+      `- If you are unsure about a slot, omit session_time (still provide rows).\n` +
+      `- Times must be hourly like 09:00 with minutes 00.\n`;
 
     const userPayload = {
       coach_id: coachId,
@@ -222,6 +238,18 @@ Deno.serve(async (req) => {
     if (!plan || typeof plan !== "object") throw new Error("Invalid plan JSON");
     if (String((plan as any).week_start ?? "") !== weekStart) {
       (plan as any).week_start = weekStart;
+    }
+    const days = (plan as any).days;
+    if (!Array.isArray(days) || days.length !== 7) {
+      throw new Error("AI plan must include days[7]");
+    }
+    for (let i = 0; i < 7; i++) {
+      const d = days[i];
+      if (!d || typeof d !== "object") throw new Error(`Invalid day object at index ${i}`);
+      const expectedDate = addDaysIso(weekStart, i);
+      if (String(d.date) !== expectedDate) throw new Error(`Invalid day.date at index ${i}: expected ${expectedDate}`);
+      if (Number(d.weekday_index) !== i) throw new Error(`Invalid weekday_index at index ${i}`);
+      if (!Array.isArray(d.rows)) throw new Error(`Invalid rows array at index ${i}`);
     }
 
     const upsertPayload = {

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../../core/ui/app_spacing.dart';
@@ -10,6 +8,7 @@ import '../../models/user.dart';
 import '../../services/ai/coach_training_ai_service.dart';
 import '../../services/profile/coach_client_rows_service.dart';
 import '../../services/profile/client_details_service.dart';
+import '../../services/schedule/schedule_calendar.dart';
 import '../../widgets/card_container.dart';
 import '../../widgets/input_field.dart';
 import '../../widgets/loading_widget.dart';
@@ -253,6 +252,100 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
     }
   }
 
+  List<Widget> _aiPlanTables(AppLocalizations s, Map<String, dynamic> plan) {
+    final days = plan['days'];
+    if (days is! List) return [Text(s.t('coach.ai.empty'), style: const TextStyle(color: Colors.red))];
+
+    final out = <Widget>[];
+
+    final summary = plan['client_summary'];
+    if (summary is Map) {
+      final sm = Map<String, dynamic>.from(summary);
+      out.addAll([
+        Text(s.t('coach.ai.summary'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Text('${sm['goals'] ?? ''}'.trim(), style: const TextStyle(height: 1.25)),
+        const SizedBox(height: 6),
+        Text('${sm['injuries'] ?? ''}'.trim(), style: const TextStyle(height: 1.25)),
+        const SizedBox(height: 6),
+        Text('${sm['notes'] ?? ''}'.trim(), style: const TextStyle(height: 1.25)),
+        const SizedBox(height: 14),
+      ]);
+    }
+
+    for (final d in days) {
+      if (d is! Map) continue;
+      final dm = Map<String, dynamic>.from(d);
+      final date = '${dm['date'] ?? ''}';
+      final idx = int.tryParse('${dm['weekday_index'] ?? ''}') ?? 0;
+      final label = (idx >= 0 && idx < ScheduleCalendar.dayLabels.length) ? ScheduleCalendar.dayLabels[idx] : 'Day';
+      final rows = dm['rows'];
+      final time = '${dm['session_time'] ?? ''}'.trim();
+      final title = '${dm['session_title'] ?? ''}'.trim();
+
+      out.add(
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Color(0xFFE2E2E6))),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('$label · $date', style: const TextStyle(fontWeight: FontWeight.w800)),
+                if (time.isNotEmpty || title.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text([if (time.isNotEmpty) time, if (title.isNotEmpty) title].join(' — ')),
+                ],
+                const SizedBox(height: 10),
+                if (rows is! List || rows.isEmpty)
+                  Text(s.t('coach.table.empty'), style: const TextStyle(color: Color(0xFF6B6B6F)))
+                else
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: [
+                        DataColumn(label: Text(s.t('coach.ai.colMuscle'))),
+                        DataColumn(label: Text(s.t('coach.ai.colExercise'))),
+                        DataColumn(label: Text(s.t('coach.ai.colReps'))),
+                        DataColumn(label: Text(s.t('coach.ai.colRounds'))),
+                      ],
+                      rows: rows.map((r) {
+                        if (r is! Map) {
+                          return const DataRow(cells: [
+                            DataCell(Text('')),
+                            DataCell(Text('')),
+                            DataCell(Text('')),
+                            DataCell(Text('')),
+                          ]);
+                        }
+                        final rm = Map<String, dynamic>.from(r);
+                        final muscle = '${rm['muscle'] ?? ''}'.trim();
+                        final exercise = '${rm['exercise'] ?? ''}'.trim();
+                        final reps = '${rm['reps'] ?? ''}'.trim();
+                        final rounds = '${rm['rounds'] ?? rm['sets'] ?? ''}'.trim();
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(muscle)),
+                            DataCell(Text(exercise)),
+                            DataCell(Text(reps)),
+                            DataCell(Text(rounds)),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      out.add(const SizedBox(height: 10));
+    }
+
+    return out;
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
@@ -398,9 +491,17 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                       Text('${s.t('coach.ai.week')}: ${_aiPreview!['week_start']}', style: Theme.of(context).textTheme.bodySmall),
                       Text('${s.t('coach.ai.model')}: ${_aiPreview!['model']}', style: Theme.of(context).textTheme.bodySmall),
                       const SizedBox(height: 8),
-                      SelectableText(
-                        const JsonEncoder.withIndent('  ').convert(_aiPreview!['plan'] ?? {}),
-                        style: Theme.of(context).textTheme.bodySmall,
+                      Builder(
+                        builder: (context) {
+                          final p = _aiPreview!['plan'];
+                          if (p is Map<String, dynamic>) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: _aiPlanTables(s, p),
+                            );
+                          }
+                          return Text(s.t('coach.ai.empty'), style: Theme.of(context).textTheme.bodySmall);
+                        },
                       ),
                     ],
                   ],

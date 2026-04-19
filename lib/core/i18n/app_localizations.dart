@@ -69,6 +69,11 @@ class AppLocalizations {
     'coach.ai.model': 'Model',
     'coach.ai.empty': 'No AI plan yet. Tap generate.',
     'coach.ai.saved': 'AI plan saved.',
+    'coach.ai.summary': 'Client summary (used by AI)',
+    'coach.ai.colMuscle': 'Muscle',
+    'coach.ai.colExercise': 'Exercise',
+    'coach.ai.colReps': 'Reps',
+    'coach.ai.colRounds': 'Rounds',
   };
 
   static const Map<String, String> _ar = {
@@ -118,6 +123,11 @@ class AppLocalizations {
     'coach.ai.model': 'النموذج',
     'coach.ai.empty': 'لا توجد خطة بعد. اضغط إنشاء.',
     'coach.ai.saved': 'تم حفظ الخطة.',
+    'coach.ai.summary': 'ملخص العميل (يستخدمه الذكاء الاصطناعي)',
+    'coach.ai.colMuscle': 'العضلة',
+    'coach.ai.colExercise': 'التمرين',
+    'coach.ai.colReps': 'التكرارات',
+    'coach.ai.colRounds': 'الجولات',
   };
 }
 
