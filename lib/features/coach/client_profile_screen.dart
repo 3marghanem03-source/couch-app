@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../core/ui/app_spacing.dart';
@@ -5,6 +7,7 @@ import '../../core/i18n/app_localizations.dart';
 import '../../models/coach_client_row.dart';
 import '../../models/client_details.dart';
 import '../../models/user.dart';
+import '../../services/ai/coach_training_ai_service.dart';
 import '../../services/profile/coach_client_rows_service.dart';
 import '../../services/profile/client_details_service.dart';
 import '../../widgets/card_container.dart';
@@ -30,6 +33,7 @@ class ClientProfileScreen extends StatefulWidget {
 class _ClientProfileScreenState extends State<ClientProfileScreen> {
   final ClientDetailsService _svc = ClientDetailsService();
   final CoachClientRowsService _rowsSvc = CoachClientRowsService();
+  final CoachTrainingAiService _aiSvc = CoachTrainingAiService();
   final _bioCtrl = TextEditingController();
   final _goalsCtrl = TextEditingController();
   final _injuriesCtrl = TextEditingController();
@@ -37,7 +41,9 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _aiBusy = false;
   List<CoachClientRow> _rows = const [];
+  Map<String, dynamic>? _aiPreview;
 
   @override
   void initState() {
@@ -66,6 +72,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
       }
 
       _rows = await _rowsSvc.listForClient(coachId: widget.coachId, clientId: widget.client.id);
+      _aiPreview = await _aiSvc.latestPlanForClient(coachId: widget.coachId, clientId: widget.client.id);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -93,6 +100,28 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   Future<void> _refreshRows() async {
     final next = await _rowsSvc.listForClient(coachId: widget.coachId, clientId: widget.client.id);
     if (mounted) setState(() => _rows = next);
+  }
+
+  Future<void> _refreshAiPreview() async {
+    final next = await _aiSvc.latestPlanForClient(coachId: widget.coachId, clientId: widget.client.id);
+    if (mounted) setState(() => _aiPreview = next);
+  }
+
+  Future<void> _generateAiWeek() async {
+    final s = AppLocalizations.of(context);
+    setState(() => _aiBusy = true);
+    try {
+      await _aiSvc.generateWeekPlan(
+        clientId: widget.client.id,
+        weekStartIso: CoachTrainingAiService.thisWeekMondayIso(),
+      );
+      await _refreshAiPreview();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s.t('coach.ai.saved'))));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _aiBusy = false);
+    }
   }
 
   static String _todayIso() {
@@ -352,10 +381,36 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sectionGap),
+              CardContainer(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(s.t('coach.ai.title'), style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    FilledButton(
+                      onPressed: (_saving || _aiBusy) ? null : _generateAiWeek,
+                      child: Text(_aiBusy ? s.t('coach.ai.generating') : s.t('coach.ai.generate')),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_aiPreview == null)
+                      Text(s.t('coach.ai.empty'), style: Theme.of(context).textTheme.bodySmall)
+                    else ...[
+                      Text('${s.t('coach.ai.week')}: ${_aiPreview!['week_start']}', style: Theme.of(context).textTheme.bodySmall),
+                      Text('${s.t('coach.ai.model')}: ${_aiPreview!['model']}', style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 8),
+                      SelectableText(
+                        const JsonEncoder.withIndent('  ').convert(_aiPreview!['plan'] ?? {}),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sectionGap),
               PrimaryButton(label: _saving ? s.t('common.saving') : s.t('common.save'), onPressed: _saving ? null : _save),
             ],
           ),
-          if (_loading || _saving) const LoadingWidget(message: 'Loading…'),
+          if (_loading || _saving || _aiBusy) const LoadingWidget(message: 'Loading…'),
         ],
       ),
     );

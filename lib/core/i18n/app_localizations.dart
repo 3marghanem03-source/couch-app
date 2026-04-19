@@ -62,6 +62,13 @@ class AppLocalizations {
     'coach.table.colWeight': 'Weight',
     'coach.table.colUnit': 'Unit',
     'coach.table.colNotes': 'Notes',
+    'coach.ai.title': 'AI week plan',
+    'coach.ai.generate': 'Generate AI week plan',
+    'coach.ai.generating': 'Generating…',
+    'coach.ai.week': 'Week',
+    'coach.ai.model': 'Model',
+    'coach.ai.empty': 'No AI plan yet. Tap generate.',
+    'coach.ai.saved': 'AI plan saved.',
   };
 
   static const Map<String, String> _ar = {
@@ -104,6 +111,13 @@ class AppLocalizations {
     'coach.table.colWeight': 'الوزن',
     'coach.table.colUnit': 'الوحدة',
     'coach.table.colNotes': 'ملاحظات',
+    'coach.ai.title': 'خطة أسبوع بالذكاء الاصطناعي',
+    'coach.ai.generate': 'إنشاء خطة أسبوع بالذكاء الاصطناعي',
+    'coach.ai.generating': 'جارٍ الإنشاء…',
+    'coach.ai.week': 'الأسبوع',
+    'coach.ai.model': 'النموذج',
+    'coach.ai.empty': 'لا توجد خطة بعد. اضغط إنشاء.',
+    'coach.ai.saved': 'تم حفظ الخطة.',
   };
 }
 
