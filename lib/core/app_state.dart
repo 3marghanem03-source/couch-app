@@ -9,12 +9,11 @@ import '../services/auth/auth_service.dart';
 import '../services/booking/booking_service.dart';
 import '../services/schedule/schedule_calendar.dart';
 import '../services/schedule/schedule_service.dart';
-import '../services/notifications/in_app_notification_service.dart';
 import 'app_navigator.dart';
 import 'app_routes.dart';
 import 'config/app_config.dart';
 
-/// Global session: Supabase auth + schedule + bookings.
+/// Global session: Oracle auth + schedule + bookings.
 final AppState appState = AppState();
 
 class AppState extends ChangeNotifier {
@@ -23,7 +22,6 @@ class AppState extends ChangeNotifier {
   final AuthService authService = AuthService();
   final ScheduleService scheduleService = ScheduleService();
   final BookingService bookingService = BookingService();
-  final InAppNotificationService notificationService = InAppNotificationService();
 
   User? currentUser;
   List<User> _clients = [];
@@ -121,7 +119,7 @@ class AppState extends ChangeNotifier {
     try {
       await refreshSchedule();
       await refreshBookings();
-      _unreadNotifications = await notificationService.countUnread();
+      _unreadNotifications = 0;
     } finally {
       isRefreshing = false;
       notifyListeners();
