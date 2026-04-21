@@ -1,9 +1,12 @@
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../models/booking.dart';
 import '../../models/booking_status.dart';
 import '../schedule/schedule_calendar.dart';
+import '../../core/config/app_config.dart';
+import '../oracle/oracle_api.dart';
 
 /// All booking reads/writes go through Supabase `bookings` + `users` (for names).
 class BookingService {
@@ -13,6 +16,8 @@ class BookingService {
   static final _timeFmt = DateFormat.jm('en_US');
 
   SupabaseClient get _c => Supabase.instance.client;
+  final OracleApi _oracle = OracleApi();
+  static const _uuid = Uuid();
 
   List<Booking> get bookings => List.unmodifiable(_bookings);
 
@@ -69,6 +74,28 @@ class BookingService {
     final day = DateTime(date.year, date.month, date.day);
     if (day.isBefore(today)) {
       throw StateError('You can’t book a past day.');
+    }
+
+    final iso = ScheduleCalendar.toIsoDate(date);
+    final closed = await _c
+        .from('coach_booking_day_closures')
+        .select('date')
+        .eq('coach_id', coachId)
+        .eq('date', iso)
+        .maybeSingle();
+    if (closed != null) {
+      throw StateError('That day is closed for booking. Pick another day.');
+    }
+
+    if (AppConfig.useOracleApi) {
+      await _oracle.createBooking(
+        id: _uuid.v4(),
+        clientId: clientId,
+        coachId: coachId,
+        dateIso: ScheduleCalendar.toIsoDate(date),
+        timeHhmm: timeKey,
+      );
+      return;
     }
 
     await _c.from('bookings').insert({

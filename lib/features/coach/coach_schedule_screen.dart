@@ -17,6 +17,7 @@ class CoachScheduleScreen extends StatefulWidget {
 
 class _CoachScheduleScreenState extends State<CoachScheduleScreen> {
   int _day = 0;
+  bool _togglingDayClosure = false;
 
   @override
   void initState() {
@@ -46,6 +47,27 @@ class _CoachScheduleScreenState extends State<CoachScheduleScreen> {
               ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(s.t('coach.schedule.clientBookingSwitch')),
+                    subtitle: Text(s.t('coach.schedule.clientBookingSwitchHint')),
+                    value: !appState.isClientBookingClosedForWeekday(_day),
+                    onChanged: _togglingDayClosure
+                        ? null
+                        : (open) async {
+                            setState(() => _togglingDayClosure = true);
+                            try {
+                              await appState.setCoachDayClientBookingOpen(weekdayIndex: _day, open: open);
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                              }
+                            } finally {
+                              if (mounted) setState(() => _togglingDayClosure = false);
+                            }
+                          },
+                  ),
+                  const SizedBox(height: 8),
                   WeekScheduleSection(
                     selectedDayIndex: _day,
                     onDayChanged: (i) => setState(() => _day = i),

@@ -17,6 +17,7 @@ class WeekScheduleSection extends StatelessWidget {
     this.selectedTime,
     this.onCoachTap,
     this.onClientSelect,
+    this.clientDayClosedBanner,
   });
 
   final int selectedDayIndex;
@@ -27,6 +28,9 @@ class WeekScheduleSection extends StatelessWidget {
   final String? selectedTime;
   final void Function(TimeSlot slot)? onCoachTap;
   final void Function(TimeSlot slot)? onClientSelect;
+
+  /// When set (client views), show under the day picker — coach closed this calendar day to bookings.
+  final String? clientDayClosedBanner;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +47,15 @@ class WeekScheduleSection extends StatelessWidget {
           weekMonday: weekMonday,
           onDaySelected: onDayChanged,
         ),
+        if (clientDayClosedBanner != null && !coachMode) ...[
+          const SizedBox(height: 12),
+          Text(
+            clientDayClosedBanner!,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+          ),
+        ],
         const SizedBox(height: 20),
         SlotGrid(
           slots: slots,

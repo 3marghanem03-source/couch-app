@@ -1,0 +1,9 @@
+# Supabase CLI / hosted Edge Functions behavior.
+# https://supabase.com/docs/guides/functions/function-configuration
+#
+# Your app uses ES256 (ECC) JWT signing keys; the functions gateway can return
+# UNAUTHORIZED_UNSUPPORTED_TOKEN_ALGORITHM before this file runs. Disabling
+# verify_jwt lets the request reach Deno; this function still enforces auth via
+# createClient(...).auth.getUser() and coach/client checks in index.ts.
+[functions.generate-training-week]
+verify_jwt = false

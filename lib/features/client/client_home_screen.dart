@@ -92,6 +92,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                           slots: slots,
                           coachMode: false,
                           availableOnly: true,
+                          clientDayClosedBanner: appState.isClientBookingClosedForWeekday(_day)
+                              ? s.t('client.book.dayClosedByCoach')
+                              : null,
                         ),
                       ],
                     ),

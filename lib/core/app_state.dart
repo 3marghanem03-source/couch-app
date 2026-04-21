@@ -201,6 +201,26 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool isClientBookingClosedForWeekday(int weekdayIndex) =>
+      scheduleService.isClientBookingClosedForWeekday(weekdayIndex);
+
+  /// When [open] is true, clients may book that calendar day (subject to slots). When false, the whole day is closed.
+  Future<void> setCoachDayClientBookingOpen({
+    required int weekdayIndex,
+    required bool open,
+  }) async {
+    if (currentUser?.role != UserRole.coach) return;
+    final date = ScheduleCalendar.dateForWeekdayIndex(weekdayIndex);
+    final iso = ScheduleCalendar.toIsoDate(date);
+    if (open) {
+      await scheduleService.removeClientBookingDayClosure(coachId: currentUser!.id, dateIso: iso);
+    } else {
+      await scheduleService.addClientBookingDayClosure(coachId: currentUser!.id, dateIso: iso);
+    }
+    await refreshSchedule();
+    notifyListeners();
+  }
+
   Future<void> bookSessionAsync({
     required int weekdayIndex,
     required String timeKey,

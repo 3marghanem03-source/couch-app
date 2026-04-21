@@ -92,6 +92,9 @@ class _ClientBookingScreenState extends State<ClientBookingScreen> {
                           availableOnly: true,
                           selectedTime: _selectedSlot?.time,
                           onClientSelect: _selectSlot,
+                          clientDayClosedBanner: appState.isClientBookingClosedForWeekday(_day)
+                              ? s.t('client.book.dayClosedByCoach')
+                              : null,
                         ),
                       ],
                     ),

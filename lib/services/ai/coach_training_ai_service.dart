@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/app_config.dart';
 import '../schedule/schedule_calendar.dart';
 
 class CoachTrainingAiService {
@@ -14,7 +15,7 @@ class CoachTrainingAiService {
     String? weekStartIso,
   }) async {
     final res = await _c.functions.invoke(
-      'generate-training-week',
+      AppConfig.generateTrainingWeekFunctionName,
       body: {
         'client_id': clientId,
         if (weekStartIso != null) 'week_start': weekStartIso,

@@ -20,6 +20,12 @@ frontend/.env
 # Postgres URLs for CLI / Prisma (copy from supabase/.env.example)
 supabase/.env
 
+# Supabase CLI local metadata
+supabase/.temp/
+
+# Oracle backend local env
+backend-oracle/.env
+
 # Reinstall with: npx skills add supabase/agent-skills
 .agents/
 

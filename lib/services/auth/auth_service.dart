@@ -2,12 +2,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/user.dart' as models;
 import '../../models/user_role.dart';
+import '../../core/config/app_config.dart';
+import '../oracle/oracle_auth_service.dart';
 
 /// Supabase Auth + `public.users` profile row.
 class AuthService {
   AuthService();
 
   SupabaseClient get _c => Supabase.instance.client;
+  final OracleAuthService _oracle = OracleAuthService();
 
   Future<AuthResponse> signUp({
     required String email,
@@ -24,6 +27,16 @@ class AuthService {
     required UserRole role,
     String? coachCode,
   }) async {
+    if (AppConfig.useOracleApi) {
+      await _oracle.signUpWithProfile(
+        email: email,
+        password: password,
+        name: name,
+        role: role,
+        coachCode: coachCode,
+      );
+      return;
+    }
     try {
       await signUp(email: email, password: password);
     } on AuthApiException catch (e) {
@@ -68,13 +81,20 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    if (AppConfig.useOracleApi) {
+      await _oracle.signIn(email: email, password: password);
+      return;
+    }
     await _c.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> signOut() => _c.auth.signOut();
+  Future<void> signOut() => AppConfig.useOracleApi ? _oracle.signOut() : _c.auth.signOut();
 
   /// Loads `public.users` for the signed-in auth user, or null if missing / not signed in.
   Future<models.User?> getCurrentUser() async {
+    if (AppConfig.useOracleApi) {
+      return _oracle.getCurrentUser();
+    }
     final session = _c.auth.currentSession;
     if (session == null) return null;
     final row = await _c.from('users').select().eq('id', session.user.id).maybeSingle();
@@ -108,6 +128,7 @@ class AuthService {
   }
 
   Future<String?> resolveCoachIdFromCode(String? code) async {
+    if (AppConfig.useOracleApi) return null;
     final trimmed = code?.trim().toUpperCase();
     if (trimmed == null || trimmed.isEmpty) return null;
     final row = await _c.from('users').select('id').eq('role', 'coach').eq('invite_code', trimmed).maybeSingle();
@@ -115,12 +136,14 @@ class AuthService {
   }
 
   Future<String?> fetchFirstCoachId() async {
+    if (AppConfig.useOracleApi) return null;
     final row = await _c.from('users').select('id').eq('role', 'coach').limit(1).maybeSingle();
     if (row == null) return null;
     return row['id'] as String?;
   }
 
   Future<List<models.User>> listClients() async {
+    if (AppConfig.useOracleApi) return [];
     final uid = _c.auth.currentUser?.id;
     if (uid == null) return [];
     final rows = await _c

@@ -12,9 +12,11 @@
 # 4. Add a one-line file web/CNAME containing only the hostname (e.g. app.yourdomain.com)
 #    so the built site includes CNAME, OR set repo Variable CUSTOM_DOMAIN to the same hostname.
 #
-# Supabase (required for the live site to connect):
-# Repo → Settings → Secrets and variables → Actions → New repository secret:
-#   SUPABASE_URL, SUPABASE_ANON_KEY (same values as in assets/app.env locally).
+# Supabase (required — no keys are hardcoded in this workflow):
+# Repo → Settings → Secrets and variables → Actions → add repository Secrets or Variables:
+#   SUPABASE_URL + SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).
+# Optional: SUPABASE_FN_GENERATE_TRAINING_WEEK only if the AI week Edge Function slug is not generate-training-week.
+# If you previously set it to an old name (e.g. hyper-api), delete that variable so the default slug is used.
 
 name: Deploy web to GitHub Pages
 
@@ -72,16 +74,8 @@ jobs:
           # Flutter build consumes SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_FN_GENERATE_TRAINING_WEEK: ${{ secrets.SUPABASE_FN_GENERATE_TRAINING_WEEK || vars.SUPABASE_FN_GENERATE_TRAINING_WEEK || '' }}
         run: |
-          # Fallback to known public (publishable) config so Pages can deploy even if
-          # the repo's Secrets/Variables UI isn't set correctly yet.
-          if [ -z "$SUPABASE_URL" ]; then
-            SUPABASE_URL="https://fohttdiwlcntblftpttu.supabase.co"
-          fi
-          if [ -z "$SUPABASE_ANON_KEY" ]; then
-            SUPABASE_ANON_KEY="sb_publishable_r3kAKlQvUqyidJX0S4l82Q_UCmlXsHk"
-          fi
-
           echo "Supabase URL provided: $([ -n "$SUPABASE_URL" ] && echo yes || echo no)"
           echo "Supabase key provided: $([ -n "$SUPABASE_ANON_KEY" ] && echo yes || echo no)"
 
@@ -93,9 +87,15 @@ jobs:
             exit 1
           fi
 
+          FN_DEFINE=""
+          if [ -n "$SUPABASE_FN_GENERATE_TRAINING_WEEK" ]; then
+            FN_DEFINE='--dart-define=SUPABASE_FN_GENERATE_TRAINING_WEEK='"$SUPABASE_FN_GENERATE_TRAINING_WEEK"
+          fi
+
           flutter build web --release --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            $FN_DEFINE
 
       - name: Disable Jekyll (Flutter asset paths)
         run: touch build/web/.nojekyll
