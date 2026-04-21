@@ -25,20 +25,33 @@ class CoachClientRow {
   final String weightUnit;
   final String notes;
 
+  static int? _int(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
+  static double? _double(dynamic v) {
+    if (v == null) return null;
+    if (v is double) return v;
+    if (v is num) return v.toDouble();
+    return double.tryParse(v.toString());
+  }
+
   static CoachClientRow fromMap(Map<String, dynamic> m) {
     return CoachClientRow(
-      id: m['id'] as String,
-      coachId: m['coach_id'] as String,
-      clientId: m['client_id'] as String,
-      rowDateIso: m['row_date'] as String? ?? '',
-      muscle: (m['muscle'] as String?) ?? '',
-      exercise: (m['exercise'] as String?) ?? '',
-      sets: (m['sets'] as int?),
-      reps: (m['reps'] as int?),
-      weight: (m['weight'] as num?)?.toDouble(),
-      weightUnit: (m['weight_unit'] as String?) ?? '',
-      notes: (m['notes'] as String?) ?? '',
+      id: '${m['id']}',
+      coachId: '${m['coach_id']}',
+      clientId: '${m['client_id']}',
+      rowDateIso: '${m['row_date'] ?? ''}',
+      muscle: '${m['muscle'] ?? ''}',
+      exercise: '${m['exercise'] ?? ''}',
+      sets: _int(m['sets']),
+      reps: _int(m['reps']),
+      weight: _double(m['weight']),
+      weightUnit: '${m['weight_unit'] ?? ''}',
+      notes: '${m['notes'] ?? ''}',
     );
   }
 }
-

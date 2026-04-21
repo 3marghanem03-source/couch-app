@@ -7,6 +7,7 @@ import '../models/user.dart';
 import '../models/user_role.dart';
 import '../services/auth/auth_service.dart';
 import '../services/booking/booking_service.dart';
+import '../services/notifications/notifications_service.dart';
 import '../services/schedule/schedule_calendar.dart';
 import '../services/schedule/schedule_service.dart';
 import 'app_navigator.dart';
@@ -22,6 +23,7 @@ class AppState extends ChangeNotifier {
   final AuthService authService = AuthService();
   final ScheduleService scheduleService = ScheduleService();
   final BookingService bookingService = BookingService();
+  final NotificationsService notificationsService = NotificationsService();
 
   User? currentUser;
   List<User> _clients = [];
@@ -113,13 +115,22 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshNotificationBadge() async {
+    try {
+      _unreadNotifications = await notificationsService.unreadCount();
+    } catch (_) {
+      _unreadNotifications = 0;
+    }
+    notifyListeners();
+  }
+
   Future<void> refreshAll() async {
     isRefreshing = true;
     notifyListeners();
     try {
       await refreshSchedule();
       await refreshBookings();
-      _unreadNotifications = 0;
+      await refreshNotificationBadge();
     } finally {
       isRefreshing = false;
       notifyListeners();

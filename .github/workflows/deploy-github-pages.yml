@@ -5,18 +5,12 @@
 # 2. Repo → Settings → Pages → Build and deployment → Source: "GitHub Actions".
 # 3. Default URL is https://<user>.github.io/<repo>/ — base-href matches automatically.
 #
-# Custom domain (e.g. app.yourdomain.com):
-# 1. Repo → Settings → Pages → Custom domain → enter your domain (adds DNS check).
-# 2. At your DNS: CNAME app → <user>.github.io (see GitHub docs for apex A/ALIAS).
-# 3. Run workflow with input base_href "/" OR set repo Variable PAGES_BASE_HREF to /
-# 4. Add a one-line file web/CNAME containing only the hostname (e.g. app.yourdomain.com)
-#    so the built site includes CNAME, OR set repo Variable CUSTOM_DOMAIN to the same hostname.
-#
-# Supabase (required — no keys are hardcoded in this workflow):
-# Repo → Settings → Secrets and variables → Actions → add repository Secrets or Variables:
-#   SUPABASE_URL + SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).
-# Optional: SUPABASE_FN_GENERATE_TRAINING_WEEK only if the AI week Edge Function slug is not generate-training-week.
-# If you previously set it to an old name (e.g. hyper-api), delete that variable so the default slug is used.
+# API for the live site (required):
+# Your Oracle REST server must be reachable over HTTPS from the browser (GitHub Pages is https://).
+# Repo → Settings → Secrets and variables → Actions → Variables (or Secrets):
+#   ORACLE_API_BASE_URL = https://your-api.example.com   (no trailing slash)
+# Example: https://couch-api.onrender.com
+# Do NOT use http://localhost:... — visitors' browsers will call their own machine, not your server.
 
 name: Deploy web to GitHub Pages
 
@@ -70,32 +64,16 @@ jobs:
 
       - name: Build web
         env:
-          # Allow either Secrets or Variables and either naming style.
-          # Flutter build consumes SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || vars.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || vars.SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_FN_GENERATE_TRAINING_WEEK: ${{ secrets.SUPABASE_FN_GENERATE_TRAINING_WEEK || vars.SUPABASE_FN_GENERATE_TRAINING_WEEK || '' }}
+          ORACLE_API_BASE_URL: ${{ secrets.ORACLE_API_BASE_URL || vars.ORACLE_API_BASE_URL }}
         run: |
-          echo "Supabase URL provided: $([ -n "$SUPABASE_URL" ] && echo yes || echo no)"
-          echo "Supabase key provided: $([ -n "$SUPABASE_ANON_KEY" ] && echo yes || echo no)"
-
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Missing Supabase config in GitHub Actions."
-            echo "Add either repository Secrets or Variables using one of these name pairs:"
-            echo "- SUPABASE_URL + SUPABASE_ANON_KEY"
-            echo "- NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          ORACLE="$(echo -n "$ORACLE_API_BASE_URL" | tr -d '\r')"
+          if [ -z "$ORACLE" ]; then
+            echo "::error::Missing ORACLE_API_BASE_URL. Add it under Repo → Settings → Secrets and variables → Actions (Variable or Secret) so the web build can call your backend."
             exit 1
           fi
-
-          FN_DEFINE=""
-          if [ -n "$SUPABASE_FN_GENERATE_TRAINING_WEEK" ]; then
-            FN_DEFINE='--dart-define=SUPABASE_FN_GENERATE_TRAINING_WEEK='"$SUPABASE_FN_GENERATE_TRAINING_WEEK"
-          fi
-
+          echo "Building with ORACLE_API_BASE_URL length: ${#ORACLE}"
           flutter build web --release --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
-            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
-            $FN_DEFINE
+            --dart-define=ORACLE_API_BASE_URL="$ORACLE"
 
       - name: Disable Jekyll (Flutter asset paths)
         run: touch build/web/.nojekyll

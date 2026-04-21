@@ -1,6 +1,7 @@
 import '../../models/user.dart' as models;
 import '../../models/user_role.dart';
 import '../../core/config/app_config.dart';
+import '../oracle/oracle_api.dart';
 import '../oracle/oracle_auth_service.dart';
 
 /// Oracle-backed auth via `backend-oracle`.
@@ -8,6 +9,7 @@ class AuthService {
   AuthService();
 
   final OracleAuthService _oracle = OracleAuthService();
+  final OracleApi _api = OracleApi();
 
   /// Sign up, ensure a session (handles email-confirm-off flow), then write `public.users`.
   Future<void> signUpWithProfile({
@@ -53,12 +55,24 @@ class AuthService {
   }
 
   Future<String?> fetchFirstCoachId() async {
-    // Not implemented in Oracle-only mode yet.
+    final u = await getCurrentUser();
+    if (u?.coachId != null && u!.coachId!.isNotEmpty) return u.coachId;
     return null;
   }
 
   Future<List<models.User>> listClients() async {
-    // Not implemented yet.
-    return [];
+    final rows = await _api.listCoachClients();
+    return rows.map((r) {
+      final roleStr = (r['role'] ?? r['ROLE'] ?? 'client').toString();
+      return models.User(
+        id: (r['id'] ?? r['ID']).toString(),
+        name: (r['name'] ?? r['NAME'] ?? 'Client').toString(),
+        role: roleStr == 'coach' ? UserRole.coach : UserRole.client,
+        coachId: (r['coach_id'] ?? r['COACH_ID'])?.toString(),
+        inviteCode: (r['invite_code'] ?? r['INVITE_CODE'])?.toString(),
+        avatarUrl: (r['avatar_url'] ?? r['AVATAR_URL'])?.toString(),
+        sessionsRemaining: 0,
+      );
+    }).toList();
   }
 }

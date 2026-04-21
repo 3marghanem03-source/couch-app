@@ -155,6 +155,27 @@ authRoutes.post('/login', async (req, res, next) => {
   }
 });
 
+authRoutes.get('/clients', requireAuth, async (req, res, next) => {
+  try {
+    if (req.user?.role !== 'coach') return res.status(403).json({ error: 'Forbidden' });
+    const coachId = req.user.sub;
+    const rows = await withConn(async (conn) => {
+      const r = await conn.execute(
+        `SELECT id, name, role, coach_id, invite_code, avatar_url
+         FROM users
+         WHERE role = 'client' AND coach_id = :cid
+         ORDER BY name`,
+        { cid: coachId },
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      return r.rows || [];
+    });
+    return res.json({ rows });
+  } catch (e) {
+    return next(e);
+  }
+});
+
 authRoutes.get('/me', requireAuth, async (req, res, next) => {
   try {
     const uid = req.user?.sub;

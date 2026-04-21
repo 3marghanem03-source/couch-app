@@ -5,6 +5,13 @@ import '../../models/booking_status.dart';
 import '../schedule/schedule_calendar.dart';
 import '../oracle/oracle_api.dart';
 
+dynamic _pick(Map<dynamic, dynamic> m, List<String> keys) {
+  for (final k in keys) {
+    if (m.containsKey(k) && m[k] != null) return m[k];
+  }
+  return null;
+}
+
 /// All booking reads/writes go through Oracle REST API.
 class BookingService {
   BookingService();
@@ -39,14 +46,68 @@ class BookingService {
     return list;
   }
 
+  static String _rangeFrom() {
+    final d = DateTime.now().subtract(const Duration(days: 400));
+    return ScheduleCalendar.toIsoDate(DateTime(d.year, d.month, d.day));
+  }
+
+  static String _rangeTo() {
+    final d = DateTime.now().add(const Duration(days: 400));
+    return ScheduleCalendar.toIsoDate(DateTime(d.year, d.month, d.day));
+  }
+
+  Booking _mapRow(Map<String, dynamic> raw) {
+    final m = Map<dynamic, dynamic>.from(raw);
+    final id = '${_pick(m, ['id', 'ID'])}';
+    final clientId = '${_pick(m, ['client_id', 'CLIENT_ID'])}';
+    final coachId = '${_pick(m, ['coach_id', 'COACH_ID'])}';
+    final dateIso = '${_pick(m, ['booking_date', 'BOOKING_DATE', 'date', 'DATE'])}';
+    final time = '${_pick(m, ['time_hhmm', 'TIME_HHMM', 'time', 'TIME'])}';
+    final clientName = '${_pick(m, ['client_name', 'CLIENT_NAME'])}'.trim();
+    final st = '${_pick(m, ['status', 'STATUS'])}'.toLowerCase();
+    final status = BookingStatus.values.firstWhere(
+      (e) => e.name == st,
+      orElse: () => BookingStatus.pending,
+    );
+
+    final parts = dateIso.split('-');
+    final y = int.parse(parts[0]);
+    final mo = int.parse(parts[1]);
+    final da = int.parse(parts[2]);
+    final date = DateTime(y, mo, da);
+    final weekdayIndex = (date.weekday - DateTime.monday + 7) % 7;
+    final monday = date.subtract(Duration(days: weekdayIndex));
+    final weekStart = ScheduleCalendar.toIsoDate(monday);
+
+    return Booking(
+      id: id,
+      clientName: clientName,
+      clientId: clientId,
+      coachId: coachId,
+      date: date,
+      time: time,
+      status: status,
+      weekdayIndex: weekdayIndex,
+      weekStart: weekStart,
+      slotId: null,
+    );
+  }
+
   Future<List<Booking>> getBookingsForCoach(String coachId) async {
-    // TODO: implement in Oracle API (coach pending list, etc.)
-    return [];
+    final rows = await _oracle.listBookingsCoach(
+      coachId: coachId,
+      fromIso: _rangeFrom(),
+      toIso: _rangeTo(),
+    );
+    return rows.map((e) => _mapRow(e)).toList();
   }
 
   Future<List<Booking>> getBookingsForClient(String clientId) async {
-    // TODO: implement in Oracle API (client bookings list)
-    return [];
+    final rows = await _oracle.listBookingsClient(
+      fromIso: _rangeFrom(),
+      toIso: _rangeTo(),
+    );
+    return rows.map((e) => _mapRow(e)).toList();
   }
 
   Future<void> createBooking({
@@ -72,12 +133,10 @@ class BookingService {
   }
 
   Future<void> approveBooking(String bookingId) async {
-    throw StateError('Not implemented yet in Oracle backend.');
+    await _oracle.patchBookingStatus(bookingId: bookingId, status: 'approved');
   }
 
   Future<void> rejectBooking(String bookingId) async {
-    throw StateError('Not implemented yet in Oracle backend.');
+    await _oracle.patchBookingStatus(bookingId: bookingId, status: 'rejected');
   }
-
-  // When Oracle booking list endpoints are implemented, reuse the helpers above.
 }

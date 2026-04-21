@@ -5,6 +5,9 @@ const morgan = require('morgan');
 const { authRoutes } = require('./routes/auth.routes');
 const { scheduleRoutes } = require('./routes/schedule.routes');
 const { bookingRoutes } = require('./routes/booking.routes');
+const { profileRoutes } = require('./routes/profile.routes');
+const { notificationsRoutes } = require('./routes/notifications.routes');
+const { aiRoutes } = require('./routes/ai.routes');
 
 function notFoundHandler(req, res) {
   res.status(404).json({ error: 'Not found' });
@@ -13,7 +16,7 @@ function notFoundHandler(req, res) {
 function errorHandler(err, req, res, _next) {
   // eslint-disable-next-line no-console
   console.error(err);
-  const status = err.statusCode || 500;
+  const status = err.statusCode || err.status || 500;
   res.status(status).json({ error: err.message || 'Internal Server Error' });
 }
 
@@ -27,6 +30,9 @@ function createApp() {
   app.use('/api/auth', authRoutes);
   app.use('/api/schedule', scheduleRoutes);
   app.use('/api/bookings', bookingRoutes);
+  app.use('/api/profile', profileRoutes);
+  app.use('/api/notifications', notificationsRoutes);
+  app.use('/api/ai', aiRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

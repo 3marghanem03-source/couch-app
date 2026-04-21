@@ -30,7 +30,7 @@ class ScheduleService {
     required String coachId,
     required String dateIso,
   }) async {
-    // TODO: implement closure endpoint in Oracle API.
+    await _oracle.addDayClosure(dateIso: dateIso);
     _clientBookingClosedDates.add(dateIso);
   }
 
@@ -38,7 +38,7 @@ class ScheduleService {
     required String coachId,
     required String dateIso,
   }) async {
-    // TODO: implement closure endpoint in Oracle API.
+    await _oracle.removeDayClosure(dateIso: dateIso);
     _clientBookingClosedDates.remove(dateIso);
   }
 
@@ -49,74 +49,85 @@ class ScheduleService {
   }) async {
     final monday = ScheduleCalendar.mondayOfThisWeek();
     final from = ScheduleCalendar.toIsoDate(monday);
-    // final to = ScheduleCalendar.toIsoDate(sunday);
 
-    final m = await _oracle.weeklySchedule(coachId: coachId, weekStartIso: from);
-      final avail = (m['availability'] as List? ?? const [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      final blocked = (m['blockedTimes'] as List? ?? const [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-      final books = (m['bookings'] as List? ?? const [])
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
+    final m = coachView
+        ? await _oracle.weeklySchedule(coachId: coachId, weekStartIso: from)
+        : await _oracle.weeklySchedulePublic(coachId: coachId, weekStartIso: from);
 
-      _clientBookingClosedDates.clear(); // TODO: serve closures from Oracle API
+    final avail = (m['availability'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    final blocked = (m['blockedTimes'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    final books = (m['bookings'] as List? ?? const [])
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
 
-      final blockedSet = <String>{};
-      for (final b in blocked) {
-        blockedSet.add('${b['DATE'] ?? b['date']}|${b['TIME'] ?? b['time']}');
+    _clientBookingClosedDates.clear();
+    final closedRaw = m['closedDates'] as List? ?? const [];
+    for (final e in closedRaw) {
+      if (e is String) {
+        _clientBookingClosedDates.add(e);
+      } else if (e is Map) {
+        final mm = Map<String, dynamic>.from(e);
+        final d = mm['d'] ?? mm['D'] ?? mm['date'];
+        if (d != null) _clientBookingClosedDates.add(d.toString());
+      }
+    }
+
+    final blockedSet = <String>{};
+    for (final b in blocked) {
+      blockedSet.add('${b['DATE'] ?? b['date']}|${b['TIME'] ?? b['time']}');
+    }
+
+    final bookingByKey = <String, Map<String, dynamic>>{};
+    for (final b in books) {
+      final st = (b['STATUS'] ?? b['status'] ?? '').toString();
+      if (st == 'rejected') continue;
+      final k = '${b['DATE'] ?? b['date']}|${b['TIME'] ?? b['time']}';
+      bookingByKey[k] = b;
+    }
+
+    final out = <int, List<TimeSlot>>{};
+    for (var day = 0; day < 7; day++) {
+      final date = ScheduleCalendar.dateForWeekdayIndex(day);
+      final iso = ScheduleCalendar.toIsoDate(date);
+
+      List<String> keys;
+      final dayAvail = avail.where((a) => (a['DAY_OF_WEEK'] ?? a['day_of_week']) == day).toList();
+      if (dayAvail.isEmpty) {
+        keys = List.from(ScheduleCalendar.defaultOpenHourKeys());
+      } else {
+        final row = dayAvail.first;
+        keys = ScheduleCalendar.hourKeysFromAvailabilityRow(
+          (row['START_TIME'] ?? row['start_time'] ?? '07:00').toString(),
+          (row['END_TIME'] ?? row['end_time'] ?? '22:00').toString(),
+        );
       }
 
-      final bookingByKey = <String, Map<String, dynamic>>{};
-      for (final b in books) {
-        final st = (b['STATUS'] ?? b['status'] ?? '').toString();
-        if (st == 'rejected') continue;
-        final k = '${b['DATE'] ?? b['date']}|${b['TIME'] ?? b['time']}';
-        bookingByKey[k] = b;
-      }
+      final slots = <TimeSlot>[];
+      for (final key in keys) {
+        final bKey = '$iso|$key';
+        SlotStatus st;
+        String? bid;
 
-      final out = <int, List<TimeSlot>>{};
-      for (var day = 0; day < 7; day++) {
-        final date = ScheduleCalendar.dateForWeekdayIndex(day);
-        final iso = ScheduleCalendar.toIsoDate(date);
-
-        List<String> keys;
-        final dayAvail = avail.where((a) => (a['DAY_OF_WEEK'] ?? a['day_of_week']) == day).toList();
-        if (dayAvail.isEmpty) {
-          keys = List.from(ScheduleCalendar.defaultOpenHourKeys());
+        if (blockedSet.contains(bKey)) {
+          st = SlotStatus.blocked;
+        } else if (bookingByKey.containsKey(bKey)) {
+          st = SlotStatus.booked;
+          bid = (bookingByKey[bKey]!['ID'] ?? bookingByKey[bKey]!['id'])?.toString();
         } else {
-          final row = dayAvail.first;
-          keys = ScheduleCalendar.hourKeysFromAvailabilityRow(
-            (row['START_TIME'] ?? row['start_time'] ?? '07:00').toString(),
-            (row['END_TIME'] ?? row['end_time'] ?? '22:00').toString(),
-          );
+          st = SlotStatus.available;
         }
 
-        final slots = <TimeSlot>[];
-        for (final key in keys) {
-          final bKey = '$iso|$key';
-          SlotStatus st;
-          String? bid;
-
-          if (blockedSet.contains(bKey)) {
-            st = SlotStatus.blocked;
-          } else if (bookingByKey.containsKey(bKey)) {
-            st = SlotStatus.booked;
-            bid = (bookingByKey[bKey]!['ID'] ?? bookingByKey[bKey]!['id'])?.toString();
-          } else {
-            st = SlotStatus.available;
-          }
-
-          if (!coachView && st != SlotStatus.available) continue;
-          slots.add(TimeSlot(timeKey: key, status: st, bookingId: bid));
-        }
-        out[day] = slots;
+        if (!coachView && st != SlotStatus.available) continue;
+        slots.add(TimeSlot(timeKey: key, status: st, bookingId: bid));
       }
+      out[day] = slots;
+    }
 
-      _byWeekday = out;
-      return;
+    _byWeekday = out;
   }
 
   List<TimeSlot> slotsForDay(int weekdayIndex) =>
@@ -136,8 +147,10 @@ class ScheduleService {
     required DateTime date,
     required String timeKey,
   }) async {
-    // TODO: implement block/unblock endpoints in Oracle API.
-    throw StateError('Not implemented yet in Oracle backend.');
+    await _oracle.addBlockedTime(
+      dateIso: ScheduleCalendar.toIsoDate(date),
+      timeHhmm: timeKey,
+    );
   }
 
   Future<void> unblockTime({
@@ -145,7 +158,9 @@ class ScheduleService {
     required DateTime date,
     required String timeKey,
   }) async {
-    // TODO: implement block/unblock endpoints in Oracle API.
-    throw StateError('Not implemented yet in Oracle backend.');
+    await _oracle.removeBlockedTime(
+      dateIso: ScheduleCalendar.toIsoDate(date),
+      timeHhmm: timeKey,
+    );
   }
 }

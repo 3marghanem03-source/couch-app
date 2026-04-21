@@ -1,13 +1,25 @@
 import '../../models/coach_client_row.dart';
+import '../oracle/oracle_api.dart';
+
+Map<String, dynamic> _normRow(Map<dynamic, dynamic> raw) {
+  final m = <String, dynamic>{};
+  for (final e in raw.entries) {
+    m[e.key.toString().toLowerCase()] = e.value;
+  }
+  return m;
+}
 
 class CoachClientRowsService {
   CoachClientRowsService();
+
+  final OracleApi _api = OracleApi();
 
   Future<List<CoachClientRow>> listForClient({
     required String coachId,
     required String clientId,
   }) async {
-    return [];
+    final rows = await _api.listCoachClientRows(clientId: clientId);
+    return rows.map((r) => CoachClientRow.fromMap(_normRow(r))).toList();
   }
 
   Future<void> create({
@@ -22,7 +34,17 @@ class CoachClientRowsService {
     required String weightUnit,
     required String notes,
   }) async {
-    throw StateError('Coach-only table rows are not available in Oracle-only mode yet.');
+    await _api.createCoachClientRow(
+      clientId: clientId,
+      rowDateIso: rowDateIso,
+      muscle: muscle,
+      exercise: exercise,
+      sets: sets,
+      reps: reps,
+      weight: weight,
+      weightUnit: weightUnit,
+      notes: notes,
+    );
   }
 
   Future<void> update({
@@ -38,7 +60,17 @@ class CoachClientRowsService {
     required String weightUnit,
     required String notes,
   }) async {
-    throw StateError('Coach-only table rows are not available in Oracle-only mode yet.');
+    await _api.updateCoachClientRow(
+      rowId: id,
+      rowDateIso: rowDateIso,
+      muscle: muscle,
+      exercise: exercise,
+      sets: sets,
+      reps: reps,
+      weight: weight,
+      weightUnit: weightUnit,
+      notes: notes,
+    );
   }
 
   Future<void> delete({
@@ -46,7 +78,6 @@ class CoachClientRowsService {
     required String coachId,
     required String clientId,
   }) async {
-    throw StateError('Coach-only table rows are not available in Oracle-only mode yet.');
+    await _api.deleteCoachClientRow(rowId: id);
   }
 }
-
