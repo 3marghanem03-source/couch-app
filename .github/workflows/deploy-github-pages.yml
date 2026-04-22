@@ -72,7 +72,8 @@ jobs:
             exit 1
           fi
           echo "Building with ORACLE_API_BASE_URL length: ${#ORACLE}"
-          flutter build web --release --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
+          # --csp: GitHub Pages (and strict CSP) block eval(); this build mode avoids that.
+          flutter build web --release --csp --no-wasm-dry-run --base-href "${{ steps.base.outputs.href }}" \
             --dart-define=ORACLE_API_BASE_URL="$ORACLE"
 
       - name: Disable Jekyll (Flutter asset paths)
